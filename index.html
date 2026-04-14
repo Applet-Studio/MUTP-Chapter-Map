@@ -219,6 +219,9 @@
         pointToLayer: (feature, latlng) => L.marker(latlng, { icon: mutcIcon }),
         onEachFeature: (feature, layer) => {
           const p = feature.properties;
+          const communityLink = p.online_community_url
+            ? `<a href="${p.online_community_url}" target="_blank" rel="noopener noreferrer">Join online community</a>`
+            : '';
           layer.bindPopup(`
             <div class="popup-header">
               <div class="popup-chapter">${p.chapter}</div>
@@ -227,11 +230,17 @@
             <div class="popup-body">
               <div class="popup-label">Local Leader(s)</div>
               <div class="popup-value">${p.leaders}</div>
-              <div class="popup-label">MCT Contact</div>
-              <div class="popup-value">${p.mct_contact}</div>
+              <div class="popup-label">MUCT Contact</div>
+              <div class="popup-value">${p.muct_contact}</div>
+              ${p.meeting_frequency ? `
+              <div class="popup-label">Meets</div>
+              <div class="popup-value">${p.meeting_frequency}</div>` : ''}
+              ${communityLink ? `
+              <div class="popup-label">Online Community</div>
+              <div class="popup-value">${communityLink}</div>` : ''}
             </div>
-          `, { maxWidth: 240 });
-          const searchText = [p.chapter, p.leaders, p.mct_contact, p.region]
+          `, { maxWidth: 260 });
+          const searchText = [p.chapter, p.leaders, p.muct_contact, p.region, p.meeting_frequency]
             .join(' ').toLowerCase();
           markerData.push({ layer, searchText });
         }
@@ -301,10 +310,12 @@
           .map(row => ({
             type: 'Feature',
             properties: {
-              chapter:     row.chapter.trim(),
-              leaders:     (row.leaders     || '').trim(),
-              mct_contact: (row.mct_contact || '').trim(),
-              region:      (row.region      || '').trim()
+              chapter:              row.chapter.trim(),
+              leaders:              (row.leaders              || '').trim(),
+              muct_contact:         (row.muct_contact         || '').trim(),
+              region:               (row.region               || '').trim(),
+              meeting_frequency:    (row.meeting_frequency    || '').trim(),
+              online_community_url: (row.online_community_url || '').trim()
             },
             geometry: {
               type: 'Point',
