@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Man Up To Cancer – Chapter Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    #map { width: 100%; height: 100%; }
+
+    /* Popup styles */
+    .leaflet-popup-content-wrapper {
+      border-radius: 6px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      padding: 0;
+      overflow: hidden;
+    }
+    .leaflet-popup-content {
+      margin: 0;
+      width: 220px !important;
+    }
+    .popup-header {
+      background: #2A4054;
+      color: #fff;
+      padding: 10px 14px 8px;
+    }
+    .popup-chapter {
+      font-family: sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .popup-region {
+      font-family: sans-serif;
+      font-size: 10px;
+      font-weight: 400;
+      opacity: 0.75;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .popup-body {
+      padding: 10px 14px 12px;
+    }
+    .popup-label {
+      font-family: sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      color: #2A4054;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 8px;
+    }
+    .popup-label:first-child { margin-top: 0; }
+    .popup-value {
+      font-family: sans-serif;
+      font-size: 12px;
+      color: #333;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .leaflet-popup-tip { background: #fff; }
+
+    /* Loading overlay */
+    #map-loading {
+      position: absolute;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f5f6f7;
+      font-family: sans-serif;
+      font-size: 13px;
+      color: #888;
+      gap: 12px;
+    }
+    #map-loading.error { color: #c0392b; }
+    #map-loading.hidden { display: none; }
+    .loading-spinner {
+      width: 22px;
+      height: 22px;
+      border: 3px solid #ddd;
+      border-top-color: #2A4054;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Search control */
+    .search-control {
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+      overflow: hidden;
+      min-width: 230px;
+    }
+    .search-wrap {
+      display: flex;
+      align-items: center;
+      padding: 0 10px 0 12px;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .search-wrap:focus-within {
+      border-bottom-color: #2A4054;
+    }
+    #search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-family: sans-serif;
+      font-size: 13px;
+      color: #333;
+      padding: 10px 0;
+      background: transparent;
+    }
+    #search-input::placeholder { color: #aaa; }
+    #search-clear {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 17px;
+      color: #aaa;
+      padding: 0 0 0 6px;
+      line-height: 1;
+    }
+    #search-clear:hover { color: #2A4054; }
+    #search-count {
+      font-family: sans-serif;
+      font-size: 11px;
+      color: #888;
+      padding: 4px 12px 6px;
+      min-height: 20px;
+    }
+    #search-count.no-results { color: #c0392b; }
+  </style>
+</head>
+<body>
+  <div id="map">
+    <div id="map-loading">
+      <div class="loading-spinner"></div>
+      <span>Loading chapters…</span>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+    // ─── Config ────────────────────────────────────────────────────────────────
+    // Replace with your Google Sheet "Publish to web" CSV URL:
+    // File → Share → Publish to web → Sheet1 → Comma-separated values (.csv) → Publish
+    //
+    // Required column headers (row 1):
+    //   chapter | leaders | mct_contact | region | lat | lng
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR2T9APgkeUKRCdphEXv6-LtH56rpzyMaN3KdrFqb251PL6gjHczMtD0kxslUvVi6XsyB_RYJ85TP2B/pub?gid=1459202765&single=true&output=csv';
+
+    const map = L.map('map', {
+      zoomControl: true,
+      scrollWheelZoom: true
+    });
+
+    // Minimal light basemap (CartoDB Positron)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+
+    // ─── Custom marker icon ────────────────────────────────────────────────────
+    const mutcIcon = L.icon({
+      iconUrl: 'MUTC-map-pin.svg',
+      iconSize:    [28, 39],
+      iconAnchor:  [14, 39],
+      popupAnchor: [0, -42]
+    });
+
+    // ─── Search control ────────────────────────────────────────────────────────
+    const SearchControl = L.Control.extend({
+      options: { position: 'topright' },
+      onAdd() {
+        const container = L.DomUtil.create('div', 'search-control');
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.disableScrollPropagation(container);
+        container.innerHTML = `
+          <div class="search-wrap">
+            <input type="text" id="search-input" placeholder="Search chapters, leaders…" autocomplete="off" spellcheck="false" />
+            <button id="search-clear" title="Clear">&#x00D7;</button>
+          </div>
+          <div id="search-count"></div>
+        `;
+        return container;
+      }
+    });
+    new SearchControl().addTo(map);
+
+    // ─── Loading / error state ─────────────────────────────────────────────────
+    const loadingEl = document.getElementById('map-loading');
+
+    function showError(msg) {
+      loadingEl.querySelector('span').textContent = msg;
+      loadingEl.querySelector('.loading-spinner').style.display = 'none';
+      loadingEl.classList.add('error');
+    }
+
+    // ─── Render chapters (called after data is ready) ──────────────────────────
+    function renderChapters(features) {
+      loadingEl.classList.add('hidden');
+
+      const markerData = [];
+
+      L.geoJSON({ type: 'FeatureCollection', features }, {
+        pointToLayer: (feature, latlng) => L.marker(latlng, { icon: mutcIcon }),
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties;
+          layer.bindPopup(`
+            <div class="popup-header">
+              <div class="popup-chapter">${p.chapter}</div>
+              <div class="popup-region">${p.region}</div>
+            </div>
+            <div class="popup-body">
+              <div class="popup-label">Local Leader(s)</div>
+              <div class="popup-value">${p.leaders}</div>
+              <div class="popup-label">MCT Contact</div>
+              <div class="popup-value">${p.mct_contact}</div>
+            </div>
+          `, { maxWidth: 240 });
+          const searchText = [p.chapter, p.leaders, p.mct_contact, p.region]
+            .join(' ').toLowerCase();
+          markerData.push({ layer, searchText });
+        }
+      }).addTo(map);
+
+      const allLayers = markerData.map(d => d.layer);
+      map.fitBounds(L.featureGroup(allLayers).getBounds(), { padding: [24, 24] });
+
+      // ── Search logic ─────────────────────────────────────────────────────────
+      const searchInput = document.getElementById('search-input');
+      const searchClear = document.getElementById('search-clear');
+      const searchCount = document.getElementById('search-count');
+
+      searchInput.addEventListener('input', () => {
+        const q = searchInput.value.trim().toLowerCase();
+        searchClear.style.display = q ? 'flex' : 'none';
+
+        if (!q) {
+          markerData.forEach(({ layer }) => {
+            if (!map.hasLayer(layer)) map.addLayer(layer);
+          });
+          searchCount.textContent = '';
+          searchCount.className = '';
+          map.fitBounds(L.featureGroup(allLayers).getBounds(), { padding: [24, 24] });
+          return;
+        }
+
+        const matches = [];
+        markerData.forEach(({ layer, searchText }) => {
+          if (searchText.includes(q)) {
+            if (!map.hasLayer(layer)) map.addLayer(layer);
+            matches.push(layer);
+          } else {
+            if (map.hasLayer(layer)) map.removeLayer(layer);
+          }
+        });
+
+        if (matches.length === 0) {
+          searchCount.textContent = 'No results';
+          searchCount.className = 'no-results';
+        } else {
+          searchCount.textContent = `${matches.length} chapter${matches.length !== 1 ? 's' : ''}`;
+          searchCount.className = '';
+          map.fitBounds(L.featureGroup(matches).getBounds(), { padding: [48, 48], maxZoom: 7 });
+        }
+      });
+
+      searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
+        searchInput.focus();
+      });
+    }
+
+    // ─── Fetch data from Google Sheet ─────────────────────────────────────────
+    Papa.parse(SHEET_CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete({ data, errors }) {
+        if (errors.length) {
+          showError('Could not parse chapter data.');
+          return;
+        }
+        const features = data
+          .filter(row => row.lat && row.lng && row.chapter)
+          .map(row => ({
+            type: 'Feature',
+            properties: {
+              chapter:     row.chapter.trim(),
+              leaders:     (row.leaders     || '').trim(),
+              mct_contact: (row.mct_contact || '').trim(),
+              region:      (row.region      || '').trim()
+            },
+            geometry: {
+              type: 'Point',
+              coordinates: [parseFloat(row.lng), parseFloat(row.lat)]
+            }
+          }));
+        if (!features.length) {
+          showError('No chapter data found. Check the sheet format.');
+          return;
+        }
+        renderChapters(features);
+      },
+      error() {
+        showError('Could not load data. Ensure the sheet is published publicly.');
+      }
+    });
+  </script>
+</body>
+</html>
