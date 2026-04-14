@@ -89,6 +89,25 @@ body {
   font-weight: 700 !important;
   line-height: 1 !important;
 }
+#map-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-family: sans-serif;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+.engaged #map-hint {
+  opacity: 0;
+}
 #map-loading {
   position: absolute;
   inset: 0;

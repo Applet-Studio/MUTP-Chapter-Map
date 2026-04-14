@@ -10,6 +10,7 @@
 </head>
 <body>
   <div id="map">
+    <div id="map-hint">Click to interact</div>
     <div id="map-loading">
       <div class="loading-spinner"></div>
       <span>Loading chapters…</span>
@@ -30,7 +31,25 @@
 
     const map = L.map('map', {
       zoomControl: true,
-      scrollWheelZoom: true
+      scrollWheelZoom: false,
+      dragging: false
+    });
+
+    // ─── Click-to-engage ───────────────────────────────────────────────────────
+    // Scroll and drag are disabled by default so the map doesn't hijack page
+    // scroll when embedded. They activate on click and deactivate on mouse leave.
+    const mapContainer = map.getContainer();
+
+    mapContainer.addEventListener('click', () => {
+      map.scrollWheelZoom.enable();
+      map.dragging.enable();
+      mapContainer.classList.add('engaged');
+    });
+
+    mapContainer.addEventListener('mouseleave', () => {
+      map.scrollWheelZoom.disable();
+      map.dragging.disable();
+      mapContainer.classList.remove('engaged');
     });
 
     // Minimal light basemap (CartoDB Positron)
