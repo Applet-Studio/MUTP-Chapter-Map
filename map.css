@@ -141,6 +141,11 @@ body {
     transform: rotate(360deg);
   }
 }
+.leaflet-top.leaflet-left {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
 .search-control {
   background: #fff;
   border-radius: 6px;
@@ -149,21 +154,30 @@ body {
   min-width: 230px;
 }
 .search-wrap {
+  position: relative;
   display: flex;
   align-items: center;
   padding: 0 10px 0 12px;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.15s;
 }
-.search-wrap:focus-within {
-  border-bottom-color: #2A4054;
+.search-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: transparent;
+  transition: background 0.15s;
+}
+.search-wrap:focus-within::after {
+  background: #2A4054;
 }
 #search-input {
   flex: 1;
   border: none;
   outline: none;
   font-family: sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   color: #333;
   padding: 10px 0;
   background: transparent;

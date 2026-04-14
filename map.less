@@ -169,6 +169,14 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+// ─── Control layout ────────────────────────────────────────────────────────
+// Lay out topleft controls (zoom + search) horizontally instead of stacked.
+.leaflet-top.leaflet-left {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
 // ─── Search control ────────────────────────────────────────────────────────
 .search-control {
   background: #fff;
@@ -179,14 +187,24 @@ html, body {
 }
 
 .search-wrap {
+  position: relative;
   display: flex;
   align-items: center;
   padding: 0 10px 0 12px;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.15s;
 
-  &:focus-within {
-    border-bottom-color: @color-brand;
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+    right: 10px;
+    height: 1px;
+    background: transparent;
+    transition: background 0.15s;
+  }
+
+  &:focus-within::after {
+    background: @color-brand;
   }
 }
 
@@ -195,7 +213,7 @@ html, body {
   border: none;
   outline: none;
   font-family: @font-base;
-  font-size: 13px;
+  font-size: 16px;
   color: @color-text;
   padding: 10px 0;
   background: transparent;

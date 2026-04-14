@@ -69,7 +69,7 @@
 
     // ─── Search control ────────────────────────────────────────────────────────
     const SearchControl = L.Control.extend({
-      options: { position: 'topright' },
+      options: { position: 'topleft' },
       onAdd() {
         const container = L.DomUtil.create('div', 'search-control');
         L.DomEvent.disableClickPropagation(container);
