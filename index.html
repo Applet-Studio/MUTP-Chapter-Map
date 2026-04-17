@@ -117,15 +117,15 @@
             <div class="popup-body">
               <div class="popup-label">Local Leader(s)</div>
               <div class="popup-value">${p.leaders}</div>
-              <div class="popup-label">MUCT Contact</div>
-              <div class="popup-value">${p.muct_contact}</div>
+              <div class="popup-label">MUTC Contact</div>
+              <div class="popup-value">${p.mutc_contact}</div>
               <div class="popup-label">Meeting Frequency</div>
               <div class="popup-value">${p.meeting_frequency}</div>
               <div class="popup-label">Online Community</div>
               <div class="popup-value">${communityValue}</div>
             </div>
           `, { maxWidth: 260 });
-          const searchText = [p.chapter, p.leaders, p.muct_contact, p.region, p.meeting_frequency]
+          const searchText = [p.chapter, p.leaders, p.mutc_contact, p.region, p.meeting_frequency]
             .join(' ').toLowerCase();
           markerData.push({ layer, searchText });
         }
@@ -199,7 +199,7 @@
             properties: {
               chapter:              row.chapter.trim(),
               leaders:              (row.leaders              || '').trim(),
-              muct_contact:         (row.muct_contact         || '').trim(),
+              mutc_contact:         (row.muct_contact         || '').trim(),
               region:               (row.region               || '').trim(),
               meeting_frequency:    (row.meeting_frequency    || '').trim(),
               online_community_url: (row.online_community_url || '').trim()
