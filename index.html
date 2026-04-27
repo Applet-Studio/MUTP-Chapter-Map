@@ -106,8 +106,11 @@
         pointToLayer: (feature, latlng) => L.marker(latlng, { icon: mutcIcon }),
         onEachFeature: (feature, layer) => {
           const p = feature.properties;
-          const communityValue = p.online_community_url
-            ? `<a href="${p.online_community_url}" target="_blank" rel="noopener noreferrer">${p.online_community_url}</a>`
+          const meetingRow = p.meeting_frequency
+            ? `<div class="popup-label">Meeting Frequency</div><div class="popup-value">${p.meeting_frequency}</div>`
+            : '';
+          const communityRow = p.online_community_url
+            ? `<div class="popup-label">Online Community</div><div class="popup-value"><a href="${p.online_community_url}" target="_blank" rel="noopener noreferrer">${p.online_community_url}</a></div>`
             : '';
           layer.bindPopup(`
             <div class="popup-header">
@@ -119,10 +122,8 @@
               <div class="popup-value">${p.leaders}</div>
               <div class="popup-label">MUTC Contact</div>
               <div class="popup-value">${p.mutc_contact}</div>
-              <div class="popup-label">Meeting Frequency</div>
-              <div class="popup-value">${p.meeting_frequency}</div>
-              <div class="popup-label">Online Community</div>
-              <div class="popup-value">${communityValue}</div>
+              ${meetingRow}
+              ${communityRow}
             </div>
           `, { maxWidth: 260 });
           const searchText = [p.chapter, p.leaders, p.mutc_contact, p.region, p.meeting_frequency]
